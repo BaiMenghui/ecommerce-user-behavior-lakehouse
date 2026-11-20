@@ -1,0 +1,27 @@
+# 数据文件
+*.csv
+!stage1-数据源准备/清洗报告/*.csv
+!stage5-数据服务层/csv数据包/*.csv
+!stage1-数据源准备/异常样本-outlier_2018-08-28.csv
+data/
+*.7z
+*.tar.gz
+*.zip
+
+# 运行时产物
+__pycache__/
+*.pyc
+target/
+node_modules/
+dist/
+derby.log
+metastore_db/
+warehouse/
+logs/
+checkpoints/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml

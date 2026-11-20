@@ -1,0 +1,195 @@
+{
+  "dataset": "UserBehavior",
+  "source": "Alibaba Tianchi (dataId=649)",
+  "cleaning_time": "2026-09-19 16:25:33",
+  "raw_records": 1048576,
+  "cleaned_records": 1048576,
+  "removed_records": 0,
+  "removal_rate": "0.0000%",
+  "steps": {
+    "missing_value_handling": {
+      "missing_before": {
+        "user_id": 0,
+        "item_id": 0,
+        "category_id": 0,
+        "behavior_type": 0,
+        "timestamp": 0,
+        "datetime_str": 0
+      },
+      "missing_after": {
+        "user_id": 0,
+        "item_id": 0,
+        "category_id": 0,
+        "behavior_type": 0,
+        "timestamp": 0,
+        "datetime_str": 0
+      },
+      "rows_removed": 0
+    },
+    "duplicate_removal": {
+      "fully_duplicated_removed": 0,
+      "key_field_duplicated_removed": 0
+    },
+    "anomaly_filtering": {
+      "anomalous_rows_removed": 0,
+      "filters_applied": [
+        "user_id > 0",
+        "item_id > 0",
+        "behavior_type in {pv, fav, cart, buy}",
+        "timestamp in [1483228800, 1577836799]"
+      ]
+    },
+    "timestamp_conversion": {
+      "format": "Unix epoch -> ISO 8601 datetime",
+      "partition_field": "dt (YYYY-MM-DD)",
+      "additional_field": "event_hour (0-23)"
+    }
+  },
+  "output": {
+    "directory": "/home/BaiMenghui/hudi-bigdata/data/cleaned",
+    "format": "CSV per daily partition",
+    "partition_count": 25,
+    "columns": [
+      "user_id",
+      "item_id",
+      "category_id",
+      "behavior_type",
+      "timestamp",
+      "event_time",
+      "dt",
+      "event_hour"
+    ]
+  },
+  "partition_details": [
+    {
+      "date": "2017-09-11",
+      "records": 1,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-09-11/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-06",
+      "records": 1,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-06/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-10",
+      "records": 1,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-10/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-12",
+      "records": 2,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-12/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-13",
+      "records": 1,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-13/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-14",
+      "records": 1,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-14/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-16",
+      "records": 2,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-16/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-17",
+      "records": 5,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-17/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-18",
+      "records": 4,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-18/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-19",
+      "records": 5,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-19/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-20",
+      "records": 1,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-20/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-21",
+      "records": 12,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-21/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-22",
+      "records": 15,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-22/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-23",
+      "records": 47,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-23/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-24",
+      "records": 12983,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-24/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-25",
+      "records": 110224,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-25/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-26",
+      "records": 110540,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-26/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-27",
+      "records": 102268,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-27/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-28",
+      "records": 104414,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-28/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-29",
+      "records": 107394,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-29/user_behavior.csv"
+    },
+    {
+      "date": "2017-11-30",
+      "records": 110668,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-11-30/user_behavior.csv"
+    },
+    {
+      "date": "2017-12-01",
+      "records": 117581,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-12-01/user_behavior.csv"
+    },
+    {
+      "date": "2017-12-02",
+      "records": 146199,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-12-02/user_behavior.csv"
+    },
+    {
+      "date": "2017-12-03",
+      "records": 126191,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2017-12-03/user_behavior.csv"
+    },
+    {
+      "date": "2018-08-28",
+      "records": 16,
+      "file": "/home/BaiMenghui/hudi-bigdata/data/cleaned/dt=2018-08-28/user_behavior.csv"
+    }
+  ],
+  "quality_summary": {
+    "data_completeness": "100%",
+    "data_consistency": "Verified - no duplicates or anomalies",
+    "data_validity": "All records pass validation rules"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "dataset": "UserBehavior",
+  "source": "Alibaba Tianchi (dataId=649)",
+  "exploration_time": "2026-09-19 16:23:10",
+  "total_records": 1048576,
+  "unique_users": 10202,
+  "unique_items": 412369,
+  "unique_categories": 5859,
+  "behavior_distribution": {
+    "pv": 940047,
+    "fav": 29353,
+    "cart": 57861,
+    "buy": 21315
+  },
+  "behavior_percentage": {
+    "pv": 89.64986801147461,
+    "fav": 2.7993202209472656,
+    "cart": 5.518054962158203,
+    "buy": 2.032756805419922
+  },
+  "missing_values": {
+    "user_id": 0,
+    "item_id": 0,
+    "category_id": 0,
+    "behavior_type": 0,
+    "timestamp": 0,
+    "datetime_str": 0
+  },
+  "duplicate_rows": 0,
+  "duplicate_on_key": 0,
+  "invalid_behavior_types": 0,
+  "timestamp_range": {
+    "min": 1505117799,
+    "max": 1535452032,
+    "min_datetime": "2017-09-11 08:16:39",
+    "max_datetime": "2018-08-28 10:27:12",
+    "out_of_range_count": 0
+  },
+  "interaction_matrix": {
+    "users": 10202,
+    "items": 412369,
+    "total_cells": 4206988538,
+    "actual_interactions": 793356,
+    "sparsity": 0.9998114195004731,
+    "density": 0.00018858049952685807
+  },
+  "user_behavior_stats": {
+    "min": 2,
+    "max": 781,
+    "mean": 102.78141540874338,
+    "median": 76.0,
+    "std": 88.77979627086135
+  },
+  "daily_stats": {
+    "days": 25,
+    "min_per_day": 1,
+    "max_per_day": 146199,
+    "mean_per_day": 41943.04
+  }
+}

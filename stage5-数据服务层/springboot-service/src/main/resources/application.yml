@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: lakehouse-api
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 2s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+app:
+  # ADS 指标 CSV 导出目录（WSL 内路径；Windows 侧运行改为 D:/... 即可）
+  data-dir: /home/BaiMenghui/hudi-bigdata/export/ads
+  # 缓存类型：redis | caffeine（Redis 连接失败时自动降级为 caffeine）
+  cache-type: redis
+
+logging:
+  level:
+    com.bmh.lakehouse: info

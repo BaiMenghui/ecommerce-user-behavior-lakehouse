@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>湖仓分析平台 · 阶段5 数据服务预览</title>
+<script src="https://registry.npmmirror.com/echarts/5.5.0/files/dist/echarts.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0b1220; color:#cfe3ff; font-family:"Microsoft YaHei",sans-serif; padding:18px; }
+  h1 { font-size:20px; color:#4da3ff; letter-spacing:2px; }
+  .tip { font-size:12px; color:#5f7ba6; margin:6px 0 14px; }
+  .bar { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+  select { background:#111c33; color:#cfe3ff; border:1px solid #23406e; border-radius:4px; padding:4px 10px; }
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .kpi { background:linear-gradient(145deg,#101c33,#0d1628); border:1px solid #1d3557; border-radius:8px; padding:12px 14px; }
+  .kpi .label { font-size:12px; color:#5f7ba6; }
+  .kpi .value { font-size:22px; color:#4da3ff; font-weight:600; margin-top:4px; }
+  .charts { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+  .card { background:#0d1628; border:1px solid #1d3557; border-radius:8px; padding:10px; }
+  .card h3 { font-size:14px; color:#7fb3ff; margin-bottom:6px; }
+  .chart { width:100%; height:300px; }
+  .card.wide { grid-column:span 2; }
+</style>
+</head>
+<body>
+<h1>电商用户行为湖仓分析平台 · 数据服务预览</h1>
+<div class="tip">阶段5 联调预览页（SpringBoot RESTful API + Redis/Caffeine 缓存）；正式 Vue3 大屏属阶段6，此页仅用于接口联调。</div>
+<div class="bar">
+  <span>日期：</span><select id="dtSel" onchange="loadAll()"></select>
+  <span id="cacheTag" style="font-size:12px;color:#5f7ba6;"></span>
+</div>
+<div class="grid" id="kpiGrid"></div>
+<div class="charts">
+  <div class="card"><h3>DAU / GMV / 订单趋势</h3><div id="c1" class="chart"></div></div>
+  <div class="card"><h3>购买转化漏斗</h3><div id="c2" class="chart"></div></div>
+  <div class="card"><h3>Top10 热销商品</h3><div id="c3" class="chart"></div></div>
+  <div class="card"><h3>类目购买占比</h3><div id="c4" class="chart"></div></div>
+  <div class="card wide"><h3>24 小时行为分布</h3><div id="c5" class="chart"></div></div>
+</div>
+<script>
+const charts = {};
+['c1','c2','c3','c4','c5'].forEach(id => charts[id] = echarts.init(document.getElementById(id)));
+window.onresize = () => Object.values(charts).forEach(c => c.resize());
+const fmt = n => Number(n).toLocaleString('en-US');
+
+async function api(path){
+  const r = await fetch(path);
+  const j = await r.json();
+  document.getElementById('cacheTag').textContent = 'X-Cache: ' + (r.headers.get('X-Cache')||'-');
+  if(j.code !== 0) throw new Error(j.msg);
+  return j.data;
+}
+
+async function initDates(){
+  const dts = await api('/api/dates');
+  const sel = document.getElementById('dtSel');
+  sel.innerHTML = dts.map(d => `<option value="${d}">${d}</option>`).join('');
+  sel.value = dts[dts.length-1];
+  await loadAll();
+}
+
+async function loadAll(){
+  const dt = document.getElementById('dtSel').value;
+  kpi(await api(`/api/kpi/summary?dt=${dt}`));
+  trend(await api('/api/dau-trend'));
+  funnel(await api(`/api/funnel?dt=${dt}`));
+  topn(await api(`/api/topn?dt=${dt}`));
+  share(await api(`/api/category-share?dt=${dt}&limit=12`));
+  heat(await api(`/api/hour-heatmap?dt=${dt}`));
+}
+
+function kpi(d){
+  const items = [
+    ['DAU', d.dau], ['新增用户', d.new_user_cnt], ['老客用户', d.old_user_cnt],
+    ['购买人数', d.paying_user_cnt], ['订单量', d.order_cnt],
+    ['GMV(元)', d.gmv], ['客单价(元)', d.avg_ticket]];
+  document.getElementById('kpiGrid').innerHTML =
+    items.map(([k,v]) => `<div class="kpi"><div class="label">${k}</div><div class="value">${fmt(v)}</div></div>`).join('');
+}
+
+function trend(rows){
+  charts.c1.setOption({
+    tooltip:{trigger:'axis'},
+    legend:{textStyle:{color:'#7fb3ff'}},
+    grid:{left:60,right:60,bottom:30,top:40},
+    xAxis:{type:'category',data:rows.map(r=>r.dt),axisLabel:{color:'#5f7ba6'}},
+    yAxis:[
+      {type:'value',name:'DAU/订单',axisLabel:{color:'#5f7ba6'},splitLine:{lineStyle:{color:'#1d3557'}}},
+      {type:'value',name:'GMV',axisLabel:{color:'#5f7ba6'},splitLine:{show:false}}],
+    series:[
+      {name:'DAU',type:'line',smooth:true,data:rows.map(r=>r.dau),itemStyle:{color:'#4da3ff'}},
+      {name:'订单量',type:'line',smooth:true,data:rows.map(r=>r.order_cnt),itemStyle:{color:'#37d67a'}},
+      {name:'GMV',type:'line',yAxisIndex:1,smooth:true,data:rows.map(r=>r.gmv),itemStyle:{color:'#f7b500'}}]
+  });
+}
+
+function funnel(d){
+  charts.c2.setOption({
+    tooltip:{trigger:'item',formatter:'{b}: {c}'},
+    series:[{type:'funnel',left:'12%',width:'76%',minSize:'18%',label:{color:'#cfe3ff',formatter:'{b}\n{c}'},
+      data:[{name:'浏览 pv',value:d.pv},{name:'收藏 fav',value:d.fav},
+            {name:'加购 cart',value:d.cart},{name:'购买 buy',value:d.buy}],
+      itemStyle:{borderColor:'#0b1220',borderWidth:2}}]
+  });
+}
+
+function topn(rows){
+  const rs = [...rows].reverse();
+  charts.c3.setOption({
+    tooltip:{trigger:'axis'},
+    grid:{left:150,right:40,top:10,bottom:30},
+    xAxis:{type:'value',axisLabel:{color:'#5f7ba6'}},
+    yAxis:{type:'category',data:rs.map(r=>r.item_id),axisLabel:{color:'#cfe3ff',fontSize:11}},
+    series:[{name:'购买量',type:'bar',data:rs.map(r=>r.buy_cnt),
+      itemStyle:{color:new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'#1d3557'},{offset:1,color:'#4da3ff'}])},
+      label:{show:true,position:'right',color:'#7fb3ff'}}]
+  });
+}
+
+function share(rows){
+  charts.c4.setOption({
+    tooltip:{trigger:'item',formatter:'{b}: {c}%'},
+    legend:{type:'scroll',orient:'vertical',right:0,top:'middle',textStyle:{color:'#7fb3ff',fontSize:10}},
+    series:[{type:'pie',radius:['35%','62%'],center:['38%','50%'],
+      data:rows.map(r=>({name:'类目'+r.category_id,value:r.buy_share_ratio})),
+      label:{show:false}}]
+  });
+}
+
+function heat(rows){
+  charts.c5.setOption({
+    tooltip:{trigger:'axis'},
+    legend:{textStyle:{color:'#7fb3ff'}},
+    grid:{left:60,right:30,bottom:30,top:40},
+    xAxis:{type:'category',name:'小时',data:rows.map(r=>r.hour_of_day+':00'),axisLabel:{color:'#5f7ba6'}},
+    yAxis:{type:'value',axisLabel:{color:'#5f7ba6'},splitLine:{lineStyle:{color:'#1d3557'}}},
+    series:[
+      {name:'浏览 pv',type:'bar',stack:'a',data:rows.map(r=>r.pv_cnt),itemStyle:{color:'#4da3ff'}},
+      {name:'加购 cart',type:'bar',stack:'a',data:rows.map(r=>r.cart_cnt),itemStyle:{color:'#f7b500'}},
+      {name:'购买 buy',type:'bar',stack:'a',data:rows.map(r=>r.buy_cnt),itemStyle:{color:'#37d67a'}}]
+  });
+}
+
+initDates().catch(e => document.getElementById('cacheTag').textContent = '加载失败: ' + e.message);
+</script>
+</body>
+</html>

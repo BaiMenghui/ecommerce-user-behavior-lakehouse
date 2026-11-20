@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>电商用户行为湖仓分析平台 · 系统详细逻辑图</title>
+<style>
+  :root{
+    --ink:#1F2733; --ink-2:#4A5563; --ink-3:#8A94A2;
+    --line:#D8DEE5; --line-strong:#B7C0CA;
+    --bg:#FFFFFF; --band:#F7F9FB; --card:#FFFFFF; --chip:#EEF2F6;
+    --brand:#166534; --brand-bg:#E7F3EA; --brand-line:#8FC9A4;
+    --blue:#1D4ED8; --blue-bg:#E8EEFB; --blue-line:#A8BFF0;
+    --amber:#92400E; --amber-bg:#FBF1E2; --amber-line:#E7C88F;
+    --gate:#0F766E; --gate-bg:#E4F4F2; --gate-line:#8CC7C0;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;
+    background:var(--bg); color:var(--ink); padding:36px 40px; max-width:1660px; margin:0 auto;
+  }
+  h1{font-size:26px; text-align:center; letter-spacing:1px;}
+  .sub{ text-align:center; color:var(--ink-3); font-size:13px; margin-top:8px; margin-bottom:26px;}
+  h2{font-size:17px; margin:30px 0 14px; padding-left:10px; border-left:4px solid var(--brand); color:var(--ink);}
+  .desc{font-size:12.5px; color:var(--ink-2); margin-bottom:12px; line-height:1.7;}
+
+  /* ===== 图例 ===== */
+  .legend{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:18px; font-size:12px; color:var(--ink-2);}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .dot{width:12px;height:12px;border-radius:3px;display:inline-block;}
+
+  /* ===== 总览横条 ===== */
+  .overview{display:flex; align-items:stretch; gap:0; justify-content:center;}
+  .ov-node{
+    background:var(--card); border:1.5px solid var(--line-strong); border-radius:10px;
+    padding:12px 14px; min-width:150px; text-align:center;
+  }
+  .ov-node b{display:block; font-size:14px; margin-bottom:4px;}
+  .ov-node i{display:block; font-style:normal; font-size:11.5px; color:var(--ink-3); line-height:1.5;}
+  .ov-src{background:var(--chip);}
+  .ov-arrow{display:flex; align-items:center; padding:0 4px; color:var(--line-strong); font-size:20px; font-weight:700;}
+
+  /* ===== 六阶段泳道 ===== */
+  .stage{
+    display:grid; grid-template-columns:210px 1fr 320px; gap:14px;
+    background:var(--band); border:1.5px solid var(--line); border-radius:12px;
+    padding:16px; margin-bottom:0;
+  }
+  .stage-head{display:flex; flex-direction:column; gap:8px;}
+  .stage-no{
+    display:inline-block; align-self:flex-start; background:var(--brand); color:#fff;
+    font-size:12px; font-weight:700; border-radius:999px; padding:3px 12px; letter-spacing:1px;
+  }
+  .stage-name{font-size:17px; font-weight:700; line-height:1.4;}
+  .stage-script{font-size:11.5px; color:var(--ink-2); background:var(--chip); border-radius:6px; padding:6px 8px; line-height:1.6; word-break:break-all;}
+  .stage-script b{color:var(--ink);}
+
+  .flow{display:flex; flex-direction:column; gap:8px;}
+  .step{display:flex; align-items:center; gap:10px;}
+  .step-n{
+    flex:0 0 22px; height:22px; border-radius:50%; background:var(--chip); color:var(--ink-2);
+    font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line-strong);
+  }
+  .step-t{font-size:13px; line-height:1.55; color:var(--ink);}
+  .step-t small{display:block; color:var(--ink-3); font-size:11.5px;}
+
+  .io{display:flex; flex-direction:column; gap:10px;}
+  .io-box{border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.65;}
+  .io-in {background:var(--blue-bg);  border:1px solid var(--blue-line); color:var(--blue);}
+  .io-out{background:var(--brand-bg); border:1px solid var(--brand-line); color:var(--brand);}
+  .io-gate{background:var(--gate-bg); border:1px solid var(--gate-line); color:var(--gate);}
+  .io-box b{display:block; font-size:12.5px; margin-bottom:4px;}
+  .io-box code{font-family:Consolas,monospace; font-size:11px; background:rgba(0,0,0,.05); padding:0 4px; border-radius:4px;}
+
+  .connector{display:flex; justify-content:center; padding:2px 0;}
+  .connector svg{display:block;}
+
+  /* ===== 表资产表 ===== */
+  table{width:100%; border-collapse:collapse; font-size:12.5px; background:var(--card);}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; line-height:1.5;}
+  th{background:var(--chip); font-size:12px; color:var(--ink-2);}
+  td.c{ text-align:center;}
+  .tag{display:inline-block; font-size:11px; border-radius:4px; padding:1px 7px; margin:1px;}
+  .tag-mor{background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-line);}
+  .tag-cow{background:var(--blue-bg); color:var(--blue); border:1px solid var(--blue-line);}
+  .tag-csv{background:var(--chip); color:var(--ink-2); border:1px solid var(--line-strong);}
+
+  .foot{margin-top:26px; font-size:11.5px; color:var(--ink-3); text-align:center; line-height:1.8;}
+
+  /* ===== 创新实验 ===== */
+  .exp-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .exp-card{background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; font-size:12.5px; line-height:1.75; color:var(--ink);}
+  .exp-card h3{font-size:14px; margin-bottom:10px; padding-left:9px; border-left:3.5px solid var(--brand); line-height:1.4;}
+  .exp-card .row{margin-bottom:7px;}
+  .exp-card .row:last-child{margin-bottom:0;}
+  .exp-lab{display:inline-block; min-width:66px; color:var(--ink-3); font-weight:700;}
+  .exp-card code{font-family:Consolas,monospace; font-size:11px; background:var(--chip); padding:0 4px; border-radius:4px;}
+  @media (max-width:980px){ .exp-grid{grid-template-columns:1fr;} }
+
+  @media print{
+    body{padding:10mm 8mm;}
+    .stage{break-inside:avoid;}
+    .exp-card{break-inside:avoid;}
+    h2{break-after:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<h1>电商用户行为湖仓分析平台 · 系统详细逻辑图</h1>
+<div class="sub">数据规模：1,048,576 条行为记录 · 25 个日期分区 ｜ 技术栈：pandas · Spark 3.3 · Hudi 0.14.1 · Hive Catalog · SpringBoot · Vue3/ECharts</div>
+
+<div class="legend">
+  <span><i class="dot" style="background:var(--blue-bg);border:1px solid var(--blue-line)"></i>阶段输入</span>
+  <span><i class="dot" style="background:var(--brand-bg);border:1px solid var(--brand-line)"></i>阶段产出</span>
+  <span><i class="dot" style="background:var(--gate-bg);border:1px solid var(--gate-line)"></i>质量闸门</span>
+  <span><i class="dot" style="background:var(--amber-bg);border:1px solid var(--amber-line)"></i>MOR 表</span>
+  <span><i class="dot" style="background:var(--blue-bg);border:1px solid var(--blue-line)"></i>COW 表</span>
+</div>
+
+<!-- ================= 总览 ================= -->
+<h2>一、全链路数据流总览</h2>
+<div class="overview">
+  <div class="ov-node ov-src"><b>原始数据</b><i>UserBehavior.csv<br>1,048,576 条<br>user/item/category/<br>behavior/ts</i></div>
+  <div class="ov-arrow">➜</div>
+  <div class="ov-node"><b>① 清洗</b><i>pandas 八步<br>25 日期分区</i></div>
+  <div class="ov-arrow">➜</div>
+  <div class="ov-node"><b>② 入湖</b><i>Hudi MOR<br>ODS 贴源表</i></div>
+  <div class="ov-arrow">➜</div>
+  <div class="ov-node"><b>③ 分层建模</b><i>DIM/DWD/DWS<br>7 张表</i></div>
+  <div class="ov-arrow">➜</div>
+  <div class="ov-node"><b>④ 指标计算</b><i>ADS 5 张表<br>5 份 CSV</i></div>
+  <div class="ov-arrow">➜</div>
+  <div class="ov-node"><b>⑤ 服务化</b><i>SpringBoot<br>8 个 REST 接口</i></div>
+  <div class="ov-arrow">➜</div>
+  <div class="ov-node"><b>⑥ 大屏</b><i>Vue3+ECharts<br>7 面板联动</i></div>
+</div>
+
+<!-- ================= 阶段1 ================= -->
+<h2>二、分阶段详细逻辑</h2>
+
+<div class="stage">
+  <div class="stage-head">
+    <span class="stage-no">阶段 1</span>
+    <div class="stage-name">数据清洗与预处理</div>
+    <div class="stage-script"><b>脚本</b>：scripts/stage1_data_clean.py<br><b>引擎</b>：Python3 + pandas<br><b>耗时</b>：约 2~3 分钟（前台）</div>
+  </div>
+  <div class="flow">
+    <div class="step"><span class="step-n">1</span><div class="step-t">加载原始 CSV<small>建立 1,048,576 条总量基准</small></div></div>
+    <div class="step"><span class="step-n">2</span><div class="step-t">缺失值处理<small>关键字段空值识别与剔除</small></div></div>
+    <div class="step"><span class="step-n">3</span><div class="step-t">去重<small>按 用户+商品+行为+时间戳 业务主键</small></div></div>
+    <div class="step"><span class="step-n">4</span><div class="step-t">异常检测与过滤<small>行为类型限定 pv/fav/cart/buy</small></div></div>
+    <div class="step"><span class="step-n">5</span><div class="step-t">时间戳转换标准化<small>ts → event_time + dt 分区字段</small></div></div>
+    <div class="step"><span class="step-n">6</span><div class="step-t">按天分区落盘<small>每天一个 CSV 目录</small></div></div>
+    <div class="step"><span class="step-n">7</span><div class="step-t">生成清洗报告<small>cleaning_report.json / partition_summary.csv</small></div></div>
+    <div class="step"><span class="step-n">8</span><div class="step-t">自动校验<small>记录数 / 缺失值 / 重复值 / 行为类型</small></div></div>
+  </div>
+  <div class="io">
+    <div class="io-box io-in"><b>输入</b><code>data/UserBehavior.csv</code>（1,048,576 条扁平大文件）</div>
+    <div class="io-box io-out"><b>输出</b><code>data/cleaned/dt=YYYY-MM-DD/</code> ×25 分区<br>清洗报告 2 份<br>已知异常分区 dt=2018-08-28（16 条，标记保留）</div>
+    <div class="io-box io-gate"><b>闸门 1 · 四项校验</b>记录数 / 缺失值 / 重复值 / 行为类型 — 全 PASS</div>
+  </div>
+</div>
+<div class="connector"><svg width="30" height="26" viewBox="0 0 30 26"><path d="M15 0 L15 18 M8 13 L15 22 L22 13" fill="none" stroke="#B7C0CA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<!-- ================= 阶段2 ================= -->
+<div class="stage">
+  <div class="stage-head">
+    <span class="stage-no">阶段 2</span>
+    <div class="stage-name">ODS 贴源层批量入湖</div>
+    <div class="stage-script"><b>脚本</b>：scripts/run_ods_ingestion.sh<br><b>SQL</b>：sql/stage2_ods_ingestion.sql<br><b>引擎</b>：spark-sql + Hudi 0.14.1<br><b>策略</b>：先清后灌（DROP + 删目录 + 重建）</div>
+  </div>
+  <div class="flow">
+    <div class="step"><span class="step-n">1</span><div class="step-t">清理旧表<small>DROP TABLE + 删除 warehouse 旧目录，保证零残留</small></div></div>
+    <div class="step"><span class="step-n">2</span><div class="step-t">建 Hudi MOR 表<small>主键 behavior_id（拼接生成天然防重）· 预合并字段 ts · 分区 dt</small></div></div>
+    <div class="step"><span class="step-n">3</span><div class="step-t">批量 INSERT 入湖<small>读取 25 个清洗分区写入湖仓，重复入湖幂等</small></div></div>
+    <div class="step"><span class="step-n">4</span><div class="step-t">执行校验 SQL<small>分区数 / 总量 / 行为分布 / 时间跨度 / 空值</small></div></div>
+  </div>
+  <div class="io">
+    <div class="io-box io-in"><b>输入</b>25 个清洗分区 CSV（HoodieCatalog + KryoSerializer）</div>
+    <div class="io-box io-out"><b>输出</b><code>ods_user_behavior_log</code>（MOR）1,048,576 条<br>行为分布：pv 940,047 / cart 57,861 / fav 29,353 / buy 21,315<br>时间跨度 2017-09-11 ~ 2018-08-28</div>
+    <div class="io-box io-gate"><b>闸门 2 · 入湖分区校验</b>25 分区逐分区行数与清洗层一致 — PASS</div>
+  </div>
+</div>
+<div class="connector"><svg width="30" height="26" viewBox="0 0 30 26"><path d="M15 0 L15 18 M8 13 L15 22 L22 13" fill="none" stroke="#B7C0CA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<!-- ================= 阶段3 ================= -->
+<div class="stage">
+  <div class="stage-head">
+    <span class="stage-no">阶段 3</span>
+    <div class="stage-name">数仓分层建模<br>DIM / DWD / DWS</div>
+    <div class="stage-script"><b>脚本</b>：rerun_stage3.sh（串行调度）<br>stage3_dim_etl.py<br>stage3_dwd_etl.py<br>stage3_dws_etl.py<br>stage3_dws_check.py<br><b>引擎</b>：spark-submit + Hive Catalog/Derby</div>
+  </div>
+  <div class="flow">
+    <div class="step"><span class="step-n">A</span><div class="step-t">DIM 维度层<small>dim_user 20,404（代理键/首末活跃/生命周期分层）· dim_item 824,738（类目归属/行为累计）· dim_date 25</small></div></div>
+    <div class="step"><span class="step-n">B</span><div class="step-t">DWD 明细事实层<small>dwd_user_behavior_fact：一行一行为，补充 event_time 派生（小时/时段），唯一事实来源</small></div></div>
+    <div class="step"><span class="step-n">C</span><div class="step-t">DWS 汇总宽表层（COW）<small>dws_user_action_day 73,544 · dws_item_action_day 711,458 · dws_category_action_day 32,326</small></div></div>
+    <div class="step"><span class="step-n">D</span><div class="step-t">逐分区三角核对<small>明细 = Σ用户 = Σ商品 = Σ类目，四种行为分别对账</small></div></div>
+  </div>
+  <div class="io">
+    <div class="io-box io-in"><b>输入</b>ODS 贴源表（全量 1,048,576 条）</div>
+    <div class="io-box io-out"><b>输出</b>7 张湖仓表：3 DIM + 1 DWD + 3 DWS（COW）<br>表格式选型：ODS 写多用 MOR，汇总读多用 COW</div>
+    <div class="io-box io-gate"><b>闸门 3 · 三角核对</b>25 个分区四口径互核 — ALL PASS<br>例 dt=2017-11-25：pv 99,250 三层一致</div>
+  </div>
+</div>
+<div class="connector"><svg width="30" height="26" viewBox="0 0 30 26"><path d="M15 0 L15 18 M8 13 L15 22 L22 13" fill="none" stroke="#B7C0CA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<!-- ================= 阶段4 ================= -->
+<div class="stage">
+  <div class="stage-head">
+    <span class="stage-no">阶段 4</span>
+    <div class="stage-name">ADS 指标层<br>与结果导出</div>
+    <div class="stage-script"><b>脚本</b>：rerun_stage4.sh<br>stage4_ads_etl.py<br>stage4_ads_check.py<br>export_ads_csv.py<br><b>基淮日</b>：dt=2017-11-25</div>
+  </div>
+  <div class="flow">
+    <div class="step"><span class="step-n">1</span><div class="step-t">ads_dau_trend<small>DAU / GMV / 客单价 / 新老占比 → 大屏折线 + KPI 卡</small></div></div>
+    <div class="step"><span class="step-n">2</span><div class="step-t">ads_funnel<small>浏览→收藏→加购→购买 + 三段转化率 → 漏斗图</small></div></div>
+    <div class="step"><span class="step-n">3</span><div class="step-t">ads_item_topn<small>按购买次数 Top10（并列按 ID 升序）→ 排行榜</small></div></div>
+    <div class="step"><span class="step-n">4</span><div class="step-t">ads_category_share / ads_hour_heatmap<small>类目销售占比（Top15+其他）→ 饼图；24h 行为分布 → 热力</small></div></div>
+    <div class="step"><span class="step-n">5</span><div class="step-t">21 项多口径交叉校验<small>与 DWD/DWS 逐项互核 + 守恒/排序/占比校验</small></div></div>
+    <div class="step"><span class="step-n">6</span><div class="step-t">CSV 重导 + 异常分区闭环<small>双保险过滤 dt=2018-08-28，行数基准 24/24/154/32,317/284</small></div></div>
+  </div>
+  <div class="io">
+    <div class="io-box io-in"><b>输入</b>DWD 明细 + DWS 三张宽表</div>
+    <div class="io-box io-out"><b>输出</b>5 张 ADS 表 → <code>export/ads/</code> 5 份单文件 CSV<br>基淮日指标：DAU 7,308 · GMV 556,190 · buy 2,043<br>漏斗 99,250/2,921/6,010/2,043</div>
+    <div class="io-box io-gate"><b>闸门 4 · 交叉校验</b>21 项多口径校验 — ALL PASS（三层 DAU/GMV/漏斗一致）</div>
+  </div>
+</div>
+<div class="connector"><svg width="30" height="26" viewBox="0 0 30 26"><path d="M15 0 L15 18 M8 13 L15 22 L22 13" fill="none" stroke="#B7C0CA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<!-- ================= 阶段5 ================= -->
+<div class="stage">
+  <div class="stage-head">
+    <span class="stage-no">阶段 5</span>
+    <div class="stage-name">服务层<br>SpringBoot API</div>
+    <div class="stage-script"><b>产物</b>：springboot-service/target/<br>lakehouse-api-1.0.0.jar<br><b>运行</b>：JDK17 · 端口 8080<br><b>缓存</b>：Redis → Caffeine 自动降级</div>
+  </div>
+  <div class="flow">
+    <div class="step"><span class="step-n">1</span><div class="step-t">启动加载 CSV<small>读取 export/ads 5 份 CSV 构建内存索引，零大数据集群依赖</small></div></div>
+    <div class="step"><span class="step-n">2</span><div class="step-t">构建指标服务<small>当日指标语义（dt 参数），服务端无状态</small></div></div>
+    <div class="step"><span class="step-n">3</span><div class="step-t">多级缓存<small>优先 Redis，不可用自动降级 Caffeine 并在健康检查如实上报</small></div></div>
+    <div class="step"><span class="step-n">4</span><div class="step-t">冒烟测试<small>8 个接口逐一验证（health/dates/kpi/trend/funnel/topn/share/heatmap）</small></div></div>
+  </div>
+  <div class="io">
+    <div class="io-box io-in"><b>输入</b>export/ads 5 份 CSV（主分析期 24 天）</div>
+    <div class="io-box io-out"><b>输出</b>8 个 REST 接口，统一 {code,msg,data}<br>冒烟基线 dt=2017-12-03：DAU 9,522 · 订单 2,510<br>GMV 695,041 · 客单价 402.46 · latestDt 正确</div>
+    <div class="io-box io-gate"><b>闸门 5 · 接口冒烟</b>8 接口全部 200 · 数值与 ADS 逐位一致</div>
+  </div>
+</div>
+<div class="connector"><svg width="30" height="26" viewBox="0 0 30 26"><path d="M15 0 L15 18 M8 13 L15 22 L22 13" fill="none" stroke="#B7C0CA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<!-- ================= 阶段6 ================= -->
+<div class="stage">
+  <div class="stage-head">
+    <span class="stage-no">阶段 6</span>
+    <div class="stage-name">可视化大屏<br>Vue3 + ECharts</div>
+    <div class="stage-script"><b>目录</b>：阶段6-脚本/vue-dashboard<br><b>运行</b>：Vite 开发端口 5173<br><b>代理</b>：直连 172.22.220.48:8080<br><b>布局</b>：4+2+1 CSS Grid 深色科技风</div>
+  </div>
+  <div class="flow">
+    <div class="step"><span class="step-n">1</span><div class="step-t">头部通栏<small>标题 / 实时时钟 / 缓存徽标 / 服务状态灯（30s 轮询）/ 日期选择器</small></div></div>
+    <div class="step"><span class="step-n">2</span><div class="step-t">左侧 KPI 竖排<small>DAU · 新增/老用户 · 订单量 · GMV · 客单价 数字卡</small></div></div>
+    <div class="step"><span class="step-n">3</span><div class="step-t">中部四图<small>DAU·GMV 双轴趋势 · 转化漏斗 · Top10 排行 · 类目占比环形</small></div></div>
+    <div class="step"><span class="step-n">4</span><div class="step-t">底部两图<small>24 小时行为流量堆积柱 · 用户行为分布环形</small></div></div>
+    <div class="step"><span class="step-n">5</span><div class="step-t">交互逻辑<small>切日期并发拉 6 接口全面板联动；默认选中主分析期最后一天</small></div></div>
+  </div>
+  <div class="io">
+    <div class="io-box io-in"><b>输入</b>8 个 REST 接口（Vite 代理转发）</div>
+    <div class="io-box io-out"><b>输出</b>7 面板数据大屏（浏览器实测验收）<br>展示值与服务层冒烟值逐位一致</div>
+    <div class="io-box io-gate"><b>闸门 6 · 大屏验收</b>7 面板渲染 · KPI 数值核对 · 状态灯正常 — PASS</div>
+  </div>
+</div>
+
+<!-- ================= 表资产 ================= -->
+<h2>三、湖仓表资产清单（10 张表 + 5 份 CSV）</h2>
+<table>
+  <tr><th style="width:90px">层级</th><th>表名</th><th class="c" style="width:80px">格式</th><th class="c" style="width:110px">行数</th><th>粒度 / 说明</th></tr>
+  <tr><td>ODS</td><td>ods_user_behavior_log</td><td class="c"><span class="tag tag-mor">MOR</span></td><td class="c">1,048,576</td><td>一条行为一条记录，主键 behavior_id，按 dt 分区</td></tr>
+  <tr><td rowspan="3">DIM</td><td>dim_user</td><td class="c">—</td><td class="c">20,404</td><td>用户粒度：代理键 user_key、首末活跃日期、生命周期分层</td></tr>
+  <tr><td>dim_item</td><td class="c">—</td><td class="c">824,738</td><td>商品粒度：类目归属、被交互统计、分层</td></tr>
+  <tr><td>dim_date</td><td class="c">—</td><td class="c">25</td><td>日期粒度：年/月/周属性，支撑时间轴补齐</td></tr>
+  <tr><td>DWD</td><td>dwd_user_behavior_fact</td><td class="c">—</td><td class="c">1,048,576</td><td>明细事实，唯一事实来源，含 event_time 派生字段</td></tr>
+  <tr><td rowspan="3">DWS</td><td>dws_user_action_day</td><td class="c"><span class="tag tag-cow">COW</span></td><td class="c">73,544</td><td>用户×天：四类行为计数、会话质量、新老标记</td></tr>
+  <tr><td>dws_item_action_day</td><td class="c"><span class="tag tag-cow">COW</span></td><td class="c">711,458</td><td>商品×天：行为计数、独立用户数</td></tr>
+  <tr><td>dws_category_action_day</td><td class="c"><span class="tag tag-cow">COW</span></td><td class="c">32,326</td><td>类目×天：行为计数、动销商品数</td></tr>
+  <tr><td rowspan="5">ADS</td><td>ads_dau_trend</td><td class="c">—</td><td class="c">24</td><td>DAU/GMV/客单价/新老占比（趋势折线 + KPI 卡）</td></tr>
+  <tr><td>ads_funnel</td><td class="c">—</td><td class="c">24</td><td>四行为量 + 三段转化率（漏斗图）</td></tr>
+  <tr><td>ads_item_topn</td><td class="c">—</td><td class="c">154</td><td>每日 Top10 热销商品（排行榜）</td></tr>
+  <tr><td>ads_category_share</td><td class="c">—</td><td class="c">32,317</td><td>类目销售占比 Top15+其他（饼图）</td></tr>
+  <tr><td>ads_hour_heatmap</td><td class="c">—</td><td class="c">284</td><td>24 小时 × 行为类型分布（DWD 直通）</td></tr>
+  <tr><td>导出</td><td>export/ads/*.csv ×5</td><td class="c"><span class="tag tag-csv">CSV</span></td><td class="c">同上</td><td>服务层直接消费，剔除异常分区后的主分析期口径</td></tr>
+</table>
+
+<!-- ================= 基线 ================= -->
+<h2>四、核心指标基线（两日对照）</h2>
+<table>
+  <tr><th>指标</th><th class="c">dt=2017-11-25（校验基准日）</th><th class="c">dt=2017-12-03（大屏默认日）</th></tr>
+  <tr><td>DAU 活跃用户</td><td class="c">7,308</td><td class="c"><b>9,522</b></td></tr>
+  <tr><td>浏览 pv</td><td class="c">99,250</td><td class="c">113,054</td></tr>
+  <tr><td>收藏 fav</td><td class="c">2,921</td><td class="c">3,555</td></tr>
+  <tr><td>加购 cart</td><td class="c">6,010</td><td class="c">7,072</td></tr>
+  <tr><td>购买 buy / 订单</td><td class="c">2,043</td><td class="c"><b>2,510</b></td></tr>
+  <tr><td>GMV</td><td class="c">556,190</td><td class="c"><b>695,041</b></td></tr>
+  <tr><td>客单价</td><td class="c">≈272</td><td class="c">402.46</td></tr>
+</table>
+
+<!-- ================= 创新实验 ================= -->
+<h2>五、创新实验</h2>
+<div class="exp-grid">
+
+  <div class="exp-card">
+    <h3>实验一 · 批流一体双链路入湖（Kafka + Structured Streaming）</h3>
+    <div class="row"><span class="exp-lab">目的</span>验证湖仓对准实时增量数据的统一管理能力，构建"批量 + 流式"双写入链路。</div>
+    <div class="row"><span class="exp-lab">方法</span><code>kafka_producer.py</code> 将 2017-12-03 当日清洗数据按 500 条/秒重放至 Kafka topic <code>user_behavior_stream</code>；<code>streaming_to_hudi.py</code> 以 Structured Streaming foreachBatch 微批 <b>upsert</b> 写入 Hudi MOR 表 <code>ods_user_behavior_realtime</code>（checkpoint 断点续传），主键/预合并键/分区与批量 ODS 表完全对齐。</div>
+    <div class="row"><span class="exp-lab">验证</span>实时表主键唯一性 / 分区分布校验通过；<b>Hudi 增量查询</b>：读取第 3 个 commit 之后的增量 = 微批 4 的 13,951 条，增量语义精确到 commit 级。</div>
+    <div class="row"><span class="exp-lab">创新点</span>同一湖仓内批量贴源与流式贴源双表口径对齐，为批流合一的实时数仓演进预留架构。</div>
+  </div>
+
+  <div class="exp-card">
+    <h3>实验二 · MOR vs COW 表格式对照实验</h3>
+    <div class="row"><span class="exp-lab">目的</span>为"湖仓表格式混选"提供实证依据，而非教条式单选。</div>
+    <div class="row"><span class="exp-lab">方法</span>同环境建对照表 <code>test_hudi_mor</code> / <code>test_hudi_cow</code>，执行相同写入与查询负载，对比两种格式的写入路径与读取代价。</div>
+    <div class="row"><span class="exp-lab">结论</span>验证"写多读少用 MOR（合并代价转移读侧）、读多写少用 COW（查询零合并）"的代价权衡，落地为 ODS=MOR、DWS/ADS=COW 的分层混选方案。</div>
+    <div class="row"><span class="exp-lab">创新点</span>按层读写特征混选表格式，并以对照实验 + 下游分区校验双重佐证选型正确性。</div>
+  </div>
+
+  <div class="exp-card">
+    <h3>实验三 · 多口径数据质量校验体系（三角核对 + 21 项交叉校验）</h3>
+    <div class="row"><span class="exp-lab">目的</span>让每个上屏指标都可回溯到明细、可证明可信。</div>
+    <div class="row"><span class="exp-lab">方法</span>DWS 层逐分区"三角核对"（明细 = Σ用户 = Σ商品 = Σ类目，四行为分别对账）；ADS 层 21 项多口径交叉校验（三层 DAU/GMV/漏斗一致、新老守恒、TopN 排序与并列、占比合计≈100%、热力图 Σ=明细数）。</div>
+    <div class="row"><span class="exp-lab">结果</span>六道质量闸门全 PASS；全链路重跑结果与基准逐位一致。</div>
+    <div class="row"><span class="exp-lab">创新点</span>把数据质量做成贯穿六阶段的工程闸门体系，而非事后人工抽检。</div>
+  </div>
+
+  <div class="exp-card">
+    <h3>实验四 · 异常数据治理闭环 + 服务层弹性降级</h3>
+    <div class="row"><span class="exp-lab">目的</span>治理真实数据中的脏数据；保证答辩/演示环境的鲁棒性。</div>
+    <div class="row"><span class="exp-lab">方法</span>异常分区 <code>dt=2018-08-28</code>（仅 16 条、游离主分析期 8 个月）：清洗层标记保留血缘 → ADS/CSV 导出双保险过滤 → 服务层 latestDt 口径恢复 2017-12-03；服务层读 ADS CSV 建内存索引实现零 Hadoop 集群依赖部署，缓存 Redis 不可用时自动降级 Caffeine 并在健康检查如实上报。</div>
+    <div class="row"><span class="exp-lab">结果</span>数据血缘与消费口径兼得；无大数据集群环境完成完整大屏演示。</div>
+    <div class="row"><span class="exp-lab">创新点</span>"分层治理、边界收敛"的数据质量闭环；演示架构与生产架构解耦的部署设计。</div>
+  </div>
+
+</div>
+
+<div class="foot">
+  六道质量闸门：①清洗四项校验 ②入湖分区校验 ③分区级三角核对 ④21 项多口径交叉校验 ⑤接口冒烟 ⑥大屏验收 — 全 PASS<br>
+  全链路脚本化，可一键重跑，重跑结果与基准逐位一致 ｜ 异常分区 dt=2018-08-28：清洗层保留血缘 → 服务边界口径收敛（质量闭环）
+</div>
+
+</body>
+</html>
